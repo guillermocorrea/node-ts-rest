@@ -16,9 +16,11 @@ export abstract class BaseRepositoryService<
   async getById(id: K): Promise<T> {
     return this.model.findById(id) as any;
   }
+
   async create(entity: T): Promise<T> {
     return this.model.create(entity as any) as any;
   }
+
   async update(id: K, entity: T): Promise<T> {
     entity.updatedAt = new Date();
     return this.model.findOneAndUpdate({ _id: id as any }, entity as any, {

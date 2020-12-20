@@ -1,16 +1,17 @@
 import { loggerFormat } from './middlewares/logger.middleware';
-import 'reflect-metadata';
 import express from 'express';
 import morgan from 'morgan';
 import helment from 'helmet';
 import indexRoutes from './routes/index.routes';
 import compression from 'compression';
 import cors from 'cors';
-import postsRoutes from './routes/posts.routes';
-import './di.container';
+import { PostsRoutes } from './routes/posts.routes';
 import addRequestId from 'express-request-id';
 import { errorHandler } from './middlewares/error-handler.middleware';
 import usersRoutes from './routes/users.routes';
+import './database';
+import './di.container';
+import { environment } from './environment';
 
 export class Server {
   private app: express.Application;
@@ -21,26 +22,28 @@ export class Server {
     this.routes();
   }
 
-  private config() {
+  private async config() {
     // Settings
     this.app.set('port', process.env.PORT || 3000);
     // Middlewares
-    this.app.use(
-      morgan(loggerFormat, {
-        skip: (req, res) => {
-          return res.statusCode < 400;
-        },
-        stream: process.stderr,
-      })
-    );
-    this.app.use(
-      morgan(loggerFormat, {
-        skip: (req, res) => {
-          return res.statusCode >= 400;
-        },
-        stream: process.stdout,
-      })
-    );
+    if (!environment.isTestEnvironment) {
+      this.app.use(
+        morgan(loggerFormat, {
+          skip: (req, res) => {
+            return res.statusCode < 400;
+          },
+          stream: process.stderr,
+        })
+      );
+      this.app.use(
+        morgan(loggerFormat, {
+          skip: (req, res) => {
+            return res.statusCode >= 400;
+          },
+          stream: process.stdout,
+        })
+      );
+    }
     this.app.use(addRequestId());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: false }));
@@ -51,14 +54,18 @@ export class Server {
 
   private routes() {
     this.app.use('/', indexRoutes);
-    this.app.use('/api/posts', postsRoutes);
+    this.app.use('/api/posts', new PostsRoutes().getRouter());
     this.app.use('/api/users', usersRoutes);
     this.app.use(errorHandler);
   }
 
-  start() {
+  async start() {
     this.app.listen(this.app.get('port'), () => {
       console.log('Listening on port', this.app.get('port'));
     });
+  }
+
+  getApp() {
+    return this.app;
   }
 }

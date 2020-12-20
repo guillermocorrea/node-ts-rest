@@ -1,3 +1,4 @@
+import { environment } from './../environment';
 import { HttpBaseException } from '../exceptions/http-base.exception';
 import { NextFunction, Request, Response } from 'express';
 
@@ -7,7 +8,9 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error(err, 'errorHandler');
+  if (!environment.isTestEnvironment) {
+    console.error(err, 'errorHandler');
+  }
   if (err instanceof HttpBaseException) {
     res.status(err.statusCode).send({ errors: err.messages });
   }

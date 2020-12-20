@@ -1,16 +1,15 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { autoInjectable, inject, delay } from 'tsyringe';
+import { nextTick } from 'process';
+import { autoInjectable } from 'tsyringe';
 import { validateInput } from '../middlewares/validate-input.middleware';
 import { PostDto } from '../models/post.dto';
 import { PostService } from '../services/post.service';
 
 @autoInjectable()
-class PostsRoutes {
+export class PostsRoutes {
   private router: Router;
 
-  constructor(
-    @inject(delay(() => PostService)) private postService?: PostService
-  ) {
+  constructor(private postService?: PostService) {
     this.router = Router();
     this.routes();
   }
@@ -49,24 +48,36 @@ class PostsRoutes {
     }
   };
 
-  private updatePost = async (req: Request, res: Response) => {
-    const updated = await this.postService?.update(
-      req.params.id,
-      res.locals.input
-    );
-    res.json(updated);
+  private updatePost = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const updated = await this.postService?.update(
+        req.params.id,
+        res.locals.input
+      );
+      res.json(updated);
+    } catch (err) {
+      next(err);
+    }
   };
 
-  private deletePost = async (req: Request, res: Response) => {
-    await this.postService?.delete(req.params.id);
-    res.status(204).send();
+  private deletePost = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      await this.postService?.delete(req.params.id);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
   };
 
   getRouter() {
     return this.router;
   }
 }
-
-const postsRoutes = new PostsRoutes();
-
-export default postsRoutes.getRouter();
