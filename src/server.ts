@@ -12,6 +12,9 @@ import usersRoutes from './routes/users.routes';
 import './database';
 import './di.container';
 import { environment } from './environment';
+import { createTerminus } from '@godaddy/terminus';
+import mongoose from 'mongoose';
+import http from 'http';
 
 export class Server {
   private app: express.Application;
@@ -20,6 +23,18 @@ export class Server {
     this.app = express();
     this.config();
     this.routes();
+  }
+
+  private async onSignal() {
+    console.log('server is starting cleanup');
+    await mongoose.disconnect();
+    console.log('MongoDB Disconnected!');
+  }
+
+  private async onHealthCheck() {
+    // checks if the system is healthy, like the db connection is live
+    // resolves, if health, rejects if not
+    return mongoose.connection.readyState === 1;
   }
 
   private async config() {
@@ -60,7 +75,13 @@ export class Server {
   }
 
   async start() {
-    this.app.listen(this.app.get('port'), () => {
+    const server = http.createServer(this.app);
+    createTerminus(server, {
+      signal: 'SIGINT',
+      healthChecks: { '/healthcheck': this.onHealthCheck },
+      onSignal: this.onSignal,
+    });
+    server.listen(this.app.get('port'), () => {
       console.log('Listening on port', this.app.get('port'));
     });
   }
