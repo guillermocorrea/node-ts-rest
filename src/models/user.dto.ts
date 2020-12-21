@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { IsDefined } from 'class-validator';
+import { IsDefined, IsEmail } from 'class-validator';
 import { UserAttrs } from './user';
 
 export class UserDto implements UserAttrs {
@@ -8,6 +8,7 @@ export class UserDto implements UserAttrs {
   name!: string;
   @IsDefined()
   @Expose()
+  @IsEmail()
   email!: string;
   @IsDefined()
   @Expose()
