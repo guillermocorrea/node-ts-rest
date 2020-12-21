@@ -8,6 +8,7 @@
   "scripts": {
     "tsc": "tsc",
     "tsc:watch": "tsc -w",
+    "build": "npm run tsc",
     "dev": "nodemon build/src/index.js",
     "prestart": "rm -rf build && npm run tsc",
     "start": "node ./build/src/index.js",
